@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # Nginx Service
+  nginx:
+    image: nginx:latest
+    container_name: nginx-server
+    ports:
+      - "81:80"   # Expose Nginx on port 80
+    volumes:
+      - ./html:/usr/share/nginx/html        # Correct path for 'html/html' directory
+      - ./nginx.conf:/etc/nginx/nginx.conf      # Custom Nginx config
+    networks:
+      - monitoring_network
+
+  # Jenkins Service
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins-server
+    ports:
+      - "8080:8080"      # Jenkins UI
+      - "50000:50000"    # Jenkins agent communication
+    volumes:
+      - jenkins_home:/var/jenkins_home
+    environment:
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+    restart: always
+    networks:
+      - monitoring_network
+
+  # Prometheus Service
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"     # Prometheus UI
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    restart: always
+    networks:
+      - monitoring_network
+
+  # Grafana Service
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"     # Grafana UI
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    restart: always
+    networks:
+      - monitoring_network
+
+volumes:
+  jenkins_home:
+
+networks:
+  monitoring_network:
+    driver: bridge
